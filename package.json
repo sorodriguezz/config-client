@@ -1,0 +1,25 @@
+{
+  "name": "config-client",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "author": "sorodriguezz",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "axios": "^1.9.0"
+  },
+  "peerDependencies": {
+    "@nestjs/common": "^11.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.21",
+    "typescript": "^5.8.3"
+  },
+  "files": [
+    "dist/**/*"
+  ]
+}
