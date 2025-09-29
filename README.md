@@ -15,7 +15,7 @@ A lightweight client for loading configuration from a Config Server. This librar
 ## Installation
 
 ```bash
-npm install config-client
+npm i @sorodriguez/config-client
 ```
 
 ## Built With
