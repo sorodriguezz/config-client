@@ -22,11 +22,13 @@ export class ConfigClientService {
       const { repo, application, profile } = option;
 
       try {
-        const { data }: Record<string, () => void> = {
-          default: async () => await defaultUseCase(url, option),
-          "spring-config-server": async () =>
-            springConfigServerUseCase(url, option),
+        const useCases = {
+          default: defaultUseCase,
+          "spring-config-server": springConfigServerUseCase,
         };
+
+        const response = await useCases[option.type](url, option);
+        const data = response.data;
 
         Object.entries(data).forEach(([key, value]) => {
           if (!process.env[key]) {
