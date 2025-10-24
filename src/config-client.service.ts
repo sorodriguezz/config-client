@@ -43,7 +43,6 @@ export class ConfigClientService {
         this.logger.log(`🗒️ Profile: ${profile}`);
       } catch (err: any) {
         this.logger.error("Error cargando configuración remota:", err.message);
-        throw err;
       }
     }
   }
