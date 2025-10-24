@@ -1,7 +1,7 @@
 export type IConfigRepository =
   | {
       type: "default";
-      repo?: string;
+      repo: string;
       application: string;
       profile: string;
       auth?: {
@@ -11,7 +11,7 @@ export type IConfigRepository =
     }
   | {
       type: "spring-config-server";
-      repo: string;
+      repo?: string;
       application: string;
       profile: string;
       auth?: {

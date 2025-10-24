@@ -38,7 +38,9 @@ export class ConfigClientService {
         });
 
         this.logger.log(`✅ Configuration loaded from Config Server: ${url}`);
-        if (repo) this.logger.log(`🗄️ Repository: ${repo}`);
+        if (repo) {
+          this.logger.log(`🗄️ Repository: ${repo}`);
+        }
         this.logger.log(`📦 Application: ${application}`);
         this.logger.log(`🗒️ Profile: ${profile}`);
       } catch (err: any) {
