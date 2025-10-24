@@ -8,6 +8,7 @@ A lightweight client for loading configuration from a Config Server. This librar
 
 - Load configuration from a Config Server
 - Support for multiple repositories, applications, and profiles
+- Support for different config server types (default and Spring Config Server)
 - Basic authentication support
 - Automatic environment variable population
 - Global module for NestJS applications
@@ -24,6 +25,13 @@ npm i @sorodriguez/config-client
 - NestJS integration
 - Axios for HTTP requests
 
+## Config Server Types
+
+This library supports two types of config servers:
+
+- **default**: Uses path parameters in the URL (e.g., `/application/profile`). Suitable for generic config servers.
+- **spring-config-server**: Uses query parameters (e.g., `?repo=...&application=...&profile=...`). Designed for Spring Cloud Config Server compatibility.
+
 ## Usage
 
 ### With NestJS
@@ -31,23 +39,23 @@ npm i @sorodriguez/config-client
 Import the `ConfigClientModule` into your application's root module and use the `forRoot` method to configure it:
 
 ```typescript
-import { Module } from '@nestjs/common';
-import { ConfigClientModule } from 'config-client';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
+import { Module } from "@nestjs/common";
+import { ConfigClientModule } from "config-client";
+import { AppController } from "./app.controller";
+import { AppService } from "./app.service";
 
 @Module({
   imports: [
-    ConfigClientModule.forRoot('https://your-config-server-url/config', [
+    ConfigClientModule.forRoot("https://your-config-server-url/config", [
       {
-        repo: 'your-config-repo',
-        application: 'your-application-name',
-        profile: 'dev',
+        type: "default",
+        application: "your-application-name",
+        profile: "dev",
         auth: {
-          username: 'username',
-          password: 'password'
-        }
-      }
+          username: "username",
+          password: "password",
+        },
+      },
     ]),
   ],
   controllers: [AppController],
@@ -59,11 +67,13 @@ export class AppModule {}
 You can then inject the configuration values using the `@Inject` decorator:
 
 ```typescript
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable, Inject } from "@nestjs/common";
 
 @Injectable()
 export class AppService {
-  constructor(@Inject('CONFIG_VALUES') private readonly config: Record<string, any>) {}
+  constructor(
+    @Inject("CONFIG_VALUES") private readonly config: Record<string, any>
+  ) {}
 
   getConfig(key: string): any {
     return this.config[key];
@@ -76,23 +86,28 @@ export class AppService {
 You can use the module with plain TypeScript as well:
 
 ```typescript
-import { ConfigClientModule } from 'config-client';
+import { ConfigClientModule } from "config-client";
 
 async function loadConfig() {
-  const configModule = ConfigClientModule.forRoot('https://your-config-server-url/config', [
-    {
-      repo: 'your-config-repo',
-      application: 'your-application-name',
-      profile: 'dev',
-      auth: {
-        username: 'username',
-        password: 'password'
-      }
-    }
-  ]);
+  const configModule = ConfigClientModule.forRoot(
+    "https://your-config-server-url/config",
+    [
+      {
+        type: "default",
+        application: "your-application-name",
+        profile: "dev",
+        auth: {
+          username: "username",
+          password: "password",
+        },
+      },
+    ]
+  );
 
   // Manually invoke the factory function
-  const configProvider = configModule.providers.find(p => p.provide === 'CONFIG_VALUES');
+  const configProvider = configModule.providers.find(
+    (p) => p.provide === "CONFIG_VALUES"
+  );
   await configProvider.useFactory();
 
   // Now your configuration is loaded in process.env
@@ -105,32 +120,37 @@ loadConfig().catch(console.error);
 ### With JavaScript (Node.js/Express)
 
 ```javascript
-const { ConfigClientModule } = require('config-client');
-const express = require('express');
+const { ConfigClientModule } = require("config-client");
+const express = require("express");
 const app = express();
 
 async function bootstrap() {
   try {
     // Configure the config client
-    const configModule = ConfigClientModule.forRoot('https://your-config-server-url/config', [
-      {
-        repo: 'your-config-repo',
-        application: 'your-application-name',
-        profile: 'dev',
-        auth: {
-          username: 'username',
-          password: 'password'
-        }
-      }
-    ]);
+    const configModule = ConfigClientModule.forRoot(
+      "https://your-config-server-url/config",
+      [
+        {
+          type: "default",
+          application: "your-application-name",
+          profile: "dev",
+          auth: {
+            username: "username",
+            password: "password",
+          },
+        },
+      ]
+    );
 
     // Manually invoke the factory function
-    const configProvider = configModule.providers.find(p => p.provide === 'CONFIG_VALUES');
+    const configProvider = configModule.providers.find(
+      (p) => p.provide === "CONFIG_VALUES"
+    );
     await configProvider.useFactory();
 
     // Start your Express app
-    app.get('/', (req, res) => {
-      res.send('Configuration loaded successfully!');
+    app.get("/", (req, res) => {
+      res.send("Configuration loaded successfully!");
     });
 
     const port = process.env.PORT || 3000;
@@ -138,7 +158,7 @@ async function bootstrap() {
       console.log(`Server running at http://localhost:${port}`);
     });
   } catch (error) {
-    console.error('Failed to load configuration:', error);
+    console.error("Failed to load configuration:", error);
     process.exit(1);
   }
 }
@@ -151,28 +171,29 @@ bootstrap();
 You can connect to multiple repositories, applications, or profiles by providing an array of configuration options:
 
 ```typescript
-ConfigClientModule.forRoot('https://your-config-server-url/config', [
+ConfigClientModule.forRoot("https://your-config-server-url/config", [
   // First configuration
   {
-    repo: 'main-config-repo',
-    application: 'api-service',
-    profile: 'dev',
+    type: "default",
+    application: "api-service",
+    profile: "dev",
     auth: {
-      username: 'username1',
-      password: 'password1'
-    }
+      username: "username1",
+      password: "password1",
+    },
   },
   // Second configuration
   {
-    repo: 'shared-config-repo',
-    application: 'common',
-    profile: 'prod',
+    type: "spring-config-server",
+    repo: "shared-config-repo",
+    application: "common",
+    profile: "prod",
     auth: {
-      username: 'username2',
-      password: 'password2'
-    }
-  }
-])
+      username: "username2",
+      password: "password2",
+    },
+  },
+]);
 ```
 
 This will load configuration from both sources and merge them into a single configuration object. If there are duplicate keys, the first one encountered will be used for environment variables.
@@ -182,26 +203,26 @@ This will load configuration from both sources and merge them into a single conf
 If you need to connect to multiple config servers, you can create separate instances of the ConfigClientModule:
 
 ```typescript
-import { Module } from '@nestjs/common';
-import { ConfigClientModule } from 'config-client';
+import { Module } from "@nestjs/common";
+import { ConfigClientModule } from "config-client";
 
 @Module({
   imports: [
     // Primary config server
-    ConfigClientModule.forRoot('https://primary-config-server/config', [
+    ConfigClientModule.forRoot("https://primary-config-server/config", [
       {
-        repo: 'primary-repo',
-        application: 'your-app',
-        profile: 'dev'
-      }
+        type: "default",
+        application: "your-app",
+        profile: "dev",
+      },
     ]),
     // Secondary config server
-    ConfigClientModule.forRoot('https://primary-config-server/config', [
+    ConfigClientModule.forRoot("https://primary-config-server/config", [
       {
-        repo: 'primary-repo',
-        application: 'your-app',
-        profile: 'prod'
-      }
+        type: "default",
+        application: "your-app",
+        profile: "prod",
+      },
     ]),
   ],
 })
@@ -221,7 +242,8 @@ Creates and configures the ConfigClientModule.
 
 ### ConfigClientOptions
 
-- `repo`: The name of the repository
+- `type`: The type of config server ('default' or 'spring-config-server')
+- `repo`: The name of the repository (required for 'spring-config-server', optional for 'default')
 - `application`: The name of the application
 - `profile`: The profile to use (e.g., 'dev', 'prod')
 - `auth`: (Optional) Authentication credentials
