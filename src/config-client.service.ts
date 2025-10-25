@@ -11,10 +11,16 @@ export class ConfigClientService {
   private logger = new Logger(ConfigClientService.name);
 
   get(key: string, configs: Record<string, any>): string {
+    if (!configs || typeof configs !== "object") {
+      return process.env[key] || "";
+    }
     return configs[key] || process.env[key] || "";
   }
 
   static getConfig(key: string, configs: Record<string, any>): string {
+    if (!configs || typeof configs !== "object") {
+      return process.env[key] || "";
+    }
     return configs[key] || process.env[key] || "";
   }
 

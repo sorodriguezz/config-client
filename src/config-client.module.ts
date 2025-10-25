@@ -1,10 +1,18 @@
-import { Module, Global, DynamicModule, Logger } from "@nestjs/common";
+import {
+  Module,
+  Global,
+  DynamicModule,
+  Logger,
+  InjectionToken,
+} from "@nestjs/common";
 
 import { ConfigClientService } from "./config-client.service";
 
 import type { IConfigServer } from "./interfaces/config-server.interface";
 
-export const CONFIG_CLIENT_VALUES = Symbol("CONFIG_CLIENT_VALUES");
+export const CONFIG_CLIENT_VALUES: InjectionToken = Symbol(
+  "CONFIG_CLIENT_VALUES"
+);
 
 @Global()
 @Module({})
