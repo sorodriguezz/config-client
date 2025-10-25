@@ -7,5 +7,6 @@ export * from "./interfaces/use-case-registry.interface";
 export * from "./interfaces/http-client.interface";
 
 export * from "./adapters";
+export * from "./helpers/config-server.helpers";
 
 export { CONFIG_CLIENT_VALUES } from "./config-client.module";

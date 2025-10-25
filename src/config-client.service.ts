@@ -59,7 +59,6 @@ export class ConfigClientService {
         httpClient,
       } = server;
 
-      // Use provided HTTP client or default to axios for backward compatibility
       const clientToUse = httpClient || DefaultHttpClient.create();
 
       for (const repository of repositories) {

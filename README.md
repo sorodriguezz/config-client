@@ -29,7 +29,9 @@ npm i @sorodriguez/config-client
 
 ## HTTP Client Configuration
 
-You can customize the HTTP client used for requests. By default, the library uses Axios, but you can specify a different client:
+You can customize the HTTP client used for requests. By default, the library uses Axios, but you can specify a different client.
+
+**Note**: Both `ConfigClientModule.forRoot()` and `ConfigClientModule.forRootAsync()` create global modules automatically, so you don't need to mark them as `@Global()` manually.
 
 ### Using Axios (Default)
 
@@ -106,6 +108,227 @@ class CustomHttpClient implements IHttpClient {
   ]
 })
 export class AppModule {}
+```
+
+## Asynchronous Configuration (forRootAsync)
+
+For dynamic configuration loading, use `forRootAsync` when you need to:
+
+- Load configuration from environment variables
+- Use ConfigService for configuration
+- Perform async operations before module initialization
+- Inject dependencies into the configuration factory
+
+**Note**: `ConfigClientModule.forRootAsync()` creates a global module automatically, so you don't need to mark it as `@Global()` manually.
+
+### Configuration Creation
+
+You can create the configuration in two ways:
+
+#### Option 1: Using Helper Functions (Recommended)
+
+```typescript
+import { Module } from "@nestjs/common";
+import { ConfigModule, ConfigService } from "@nestjs/config";
+import {
+  ConfigClientModule,
+  createSpringConfigServer, // 👈 Helper function
+  createNestConfigServer, // 👈 Helper function
+} from "@sorodriguez/config-client";
+
+@Module({
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigClientModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: async (configService: ConfigService) => {
+        const servers = [
+          // 👈 No 'as const' needed - type is inferred automatically
+          createSpringConfigServer({
+            url: configService.get<string>(
+              "CONFIG_SERVER_URL",
+              "http://localhost:8888"
+            ),
+            logging: configService.get<boolean>("CONFIG_LOGGING", true),
+            repositories: [
+              {
+                application: configService.get<string>(
+                  "APPLICATION_NAME",
+                  "my-app"
+                ),
+                profile: configService.get<string>("PROFILE", "development"),
+              },
+            ],
+          }),
+          createNestConfigServer({
+            url: "http://localhost:8889",
+            logging: true,
+            alias: "nest",
+            repositories: [
+              {
+                application: "stock-microservice",
+                repo: "service-configuration-sb",
+                profile: "prod",
+                auth: {
+                  username: "admin",
+                  password: "admin",
+                },
+              },
+            ],
+          }),
+        ];
+
+        return servers;
+      },
+    }),
+  ],
+})
+export class AppModule {}
+```
+
+#### Option 2: Direct Configuration with `as const`
+
+```typescript
+import { Module } from "@nestjs/common";
+import { ConfigModule, ConfigService } from "@nestjs/config";
+import { ConfigClientModule } from "@sorodriguez/config-client";
+
+@Module({
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigClientModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: async (configService: ConfigService) => {
+        const servers = [
+          // 👈 You need 'as const' for type safety
+          {
+            url: configService.get<string>(
+              "CONFIG_SERVER_URL",
+              "http://localhost:8888"
+            ),
+            type: "spring-config-server" as const,
+            logging: configService.get<boolean>("CONFIG_LOGGING", true),
+            repositories: [
+              {
+                application: configService.get<string>(
+                  "APPLICATION_NAME",
+                  "my-app"
+                ),
+                profile: configService.get<string>("PROFILE", "development"),
+              },
+            ],
+          },
+        ];
+
+        return servers;
+      },
+    }),
+  ],
+})
+export class AppModule {}
+```
+
+### Advanced Async Configuration with Multiple Servers
+
+```typescript
+import { Module } from "@nestjs/common";
+import { ConfigModule, ConfigService } from "@nestjs/config";
+import {
+  ConfigClientModule,
+  AxiosHttpAdapter,
+  FetchHttpAdapter,
+} from "@sorodriguez/config-client";
+
+@Module({
+  imports: [
+    ConfigModule.forRoot(),
+    ConfigClientModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: async (configService: ConfigService) => {
+        // Load multiple servers from environment
+        const serverConfigs = configService.get<string>(
+          "CONFIG_SERVERS",
+          "primary,secondary"
+        );
+        const servers = serverConfigs.split(",").map((serverName) => {
+          const url = configService.get<string>(
+            `${serverName.toUpperCase()}_CONFIG_URL`
+          );
+          const type = configService.get<string>(
+            `${serverName.toUpperCase()}_CONFIG_TYPE`,
+            "spring-config-server"
+          );
+
+          if (!url) {
+            throw new Error(`Missing configuration for server: ${serverName}`);
+          }
+
+          return {
+            url,
+            type: type as "spring-config-server" | "nest-config-server",
+            alias: serverName,
+            logging: configService.get<string>("NODE_ENV") === "development",
+            httpClient:
+              configService.get<string>("HTTP_CLIENT") === "fetch"
+                ? new FetchHttpAdapter()
+                : new AxiosHttpAdapter(),
+            repositories: [
+              {
+                application: configService.get<string>("APP_NAME", "my-app"),
+                profile: configService.get<string>("NODE_ENV", "development"),
+                repo:
+                  type === "nest-config-server"
+                    ? configService.get<string>("CONFIG_REPO")
+                    : undefined,
+                auth: configService.get<string>(
+                  `${serverName.toUpperCase()}_USERNAME`
+                )
+                  ? {
+                      username: configService.get<string>(
+                        `${serverName.toUpperCase()}_USERNAME`
+                      )!,
+                      password: configService.get<string>(
+                        `${serverName.toUpperCase()}_PASSWORD`
+                      )!,
+                    }
+                  : undefined,
+              },
+            ],
+          };
+        });
+
+        return servers;
+      },
+    }),
+  ],
+})
+export class AppModule {}
+```
+
+### Environment Variables for Async Configuration
+
+```bash
+# .env
+NODE_ENV=development
+CONFIG_SERVER_URL=http://config-server:8888
+APP_NAME=my-microservice
+HTTP_CLIENT=axios
+
+# For multiple servers
+CONFIG_SERVERS=primary,secondary
+PRIMARY_CONFIG_URL=http://config-primary:8888
+PRIMARY_CONFIG_TYPE=spring-config-server
+SECONDARY_CONFIG_URL=http://config-secondary:3000
+SECONDARY_CONFIG_TYPE=nest-config-server
+CONFIG_REPO=my-config-repo
+
+# Authentication (optional)
+CONFIG_USERNAME=admin
+CONFIG_PASSWORD=secret
+PRIMARY_USERNAME=admin1
+PRIMARY_PASSWORD=secret1
+SECONDARY_USERNAME=admin2
+SECONDARY_PASSWORD=secret2
 ```
 
 ## Config Server Types
