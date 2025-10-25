@@ -9,15 +9,14 @@ export interface ILoggingParams {
 }
 
 export const logging = (logger: Logger, params: ILoggingParams) => {
-  logger.log(`✅ Configuration loaded from Config Server: ${params.url}`);
+  logger.log(`✅ URL Config Server: ${params.url}`);
 
-  if (params.repo && params.repo !== "undefined" && params.repo.trim() !== "") {
+  if (params.repo) {
     logger.log(`🗄️ Repository: ${params.repo}`);
   }
 
   logger.log(`📦 Application: ${params.application}`);
   logger.log(`🗒️ Profile: ${params.profile}`);
-  logger.log(
-    `🔐 Auth basic: ${params.auth && params.auth.username ? "✅" : "❌"}`
-  );
+
+  logger.log(`🔐 Ath  basic: ${params.auth ? "✅" : "❌"}`);
 };
