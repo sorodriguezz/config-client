@@ -22,7 +22,7 @@ export class ConfigClientService {
     const allConfigs: Record<string, any> = {};
 
     for (const server of servers) {
-      const { url, type, logging: enableLogging, repositories } = server;
+      const { url, type, logging: enableLogging, alias, repositories } = server;
 
       for (const repository of repositories) {
         const { repo, application, profile } = repository;
@@ -37,10 +37,12 @@ export class ConfigClientService {
           const data = response.data;
 
           Object.entries(data).forEach(([key, value]) => {
-            if (!process.env[key]) {
-              process.env[key] = String(value);
+            const finalKey = alias ? `${alias}.${key}` : key;
+
+            if (!process.env[finalKey]) {
+              process.env[finalKey] = String(value);
             }
-            allConfigs[key] = value;
+            allConfigs[finalKey] = value;
           });
 
           if (enableLogging) {
@@ -52,7 +54,7 @@ export class ConfigClientService {
             });
           }
 
-          this.logger.log(`Configuration loaded from ${url} - ${application}`);
+          this.logger.log("Configuration loaded");
         } catch (err: any) {
           this.logger.error(
             `Error loading configuration from ${url} - ${application}:`,

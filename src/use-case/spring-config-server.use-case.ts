@@ -18,5 +18,15 @@ export const springConfigServerUseCase = async (
     };
   }
 
-  return await axios.get(objAxios.url!, objAxios);
+  const response = await axios.get(objAxios.url!, objAxios);
+
+  const properties: Record<string, any> = {};
+
+  if (response.data.propertySources) {
+    response.data.propertySources.forEach((source: any) => {
+      Object.assign(properties, source.source);
+    });
+  }
+
+  return { ...properties };
 };
