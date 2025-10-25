@@ -1,25 +1,26 @@
-import axios, { type AxiosRequestConfig } from "axios";
 import { type INestConfigRepository } from "../interfaces/config-server.interface";
+import { type IHttpClient } from "../interfaces/http-client.interface";
 
 export const nestConfigServerUseCase = async (
   url: string,
-  config: INestConfigRepository
+  config: INestConfigRepository,
+  httpClient: IHttpClient
 ) => {
   const { repo, application, profile, auth } = config;
 
-  const objAxios: AxiosRequestConfig = {
+  const requestOptions = {
     params: {
       repo,
       application,
       profile,
     },
+    auth: auth
+      ? {
+          username: auth.username,
+          password: auth.password,
+        }
+      : undefined,
   };
 
-  if (auth) {
-    objAxios.auth = {
-      username: auth.username,
-      password: auth.password,
-    };
-  }
-  return await axios.get(url, objAxios);
+  return await httpClient.get(url, requestOptions);
 };

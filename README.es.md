@@ -27,6 +27,87 @@ npm i @sorodriguez/config-client
 - Integración con NestJS
 - Axios para peticiones HTTP
 
+## Configuración del Cliente HTTP
+
+Puedes personalizar el cliente HTTP usado para las peticiones. Por defecto, la biblioteca usa Axios, pero puedes especificar un cliente diferente:
+
+### Usando Axios (Por Defecto)
+
+```typescript
+import { ConfigClientModule } from "@sorodriguez/config-client";
+
+@Module({
+  imports: [
+    ConfigClientModule.forRoot([
+      {
+        url: "http://localhost:8888",
+        type: "spring-config-server",
+        // httpClient no especificado - usa Axios por defecto
+        repositories: [...]
+      }
+    ])
+  ]
+})
+export class AppModule {}
+```
+
+### Usando Fetch
+
+```typescript
+import { ConfigClientModule, FetchHttpAdapter } from "@sorodriguez/config-client";
+
+@Module({
+  imports: [
+    ConfigClientModule.forRoot([
+      {
+        url: "http://localhost:8888",
+        type: "spring-config-server",
+        httpClient: new FetchHttpAdapter(),
+        repositories: [...]
+      }
+    ])
+  ]
+})
+export class AppModule {}
+```
+
+### Usando Cliente HTTP Personalizado
+
+```typescript
+import { ConfigClientModule } from "@sorodriguez/config-client";
+import { IHttpClient, IHttpRequestOptions, IHttpResponse } from "@sorodriguez/config-client";
+
+class CustomHttpClient implements IHttpClient {
+  async get<T>(url: string, options?: IHttpRequestOptions): Promise<IHttpResponse<T>> {
+    // Tu implementación HTTP personalizada
+    const response = await yourHttpLibrary.get(url, options);
+    return {
+      data: response.data,
+      status: response.status,
+      statusText: response.statusText
+    };
+  }
+
+  getName(): string {
+    return "custom";
+  }
+}
+
+@Module({
+  imports: [
+    ConfigClientModule.forRoot([
+      {
+        url: "http://localhost:8888",
+        type: "spring-config-server",
+        httpClient: new CustomHttpClient(),
+        repositories: [...]
+      }
+    ])
+  ]
+})
+export class AppModule {}
+```
+
 ## Tipos de Config Server
 
 Esta biblioteca soporta dos tipos de servidores de configuración:

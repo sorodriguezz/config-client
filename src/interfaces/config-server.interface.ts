@@ -1,9 +1,11 @@
 import type { IConfigRepository } from "./config-repository.interface";
+import type { IHttpClient } from "./http-client.interface";
 
 interface IBaseConfigServer {
   url: string;
   logging?: boolean;
   alias?: string;
+  httpClient?: IHttpClient;
 }
 
 interface INestConfigRepository extends IConfigRepository {

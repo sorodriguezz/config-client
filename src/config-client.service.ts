@@ -3,6 +3,7 @@ import { Injectable, Logger } from "@nestjs/common";
 import { nestConfigServerUseCase } from "./use-case/nest-config-server.use-case";
 import { springConfigServerUseCase } from "./use-case/spring-config-server.use-case";
 import { logging } from "./utils/logging";
+import { DefaultHttpClient } from "./adapters";
 
 import type {
   IConfigServer,
@@ -10,6 +11,7 @@ import type {
   ISpringConfigRepository,
 } from "./interfaces/config-server.interface";
 import type { IConfigServerRegistry } from "./interfaces/use-case-registry.interface";
+import type { IHttpClient } from "./interfaces/http-client.interface";
 
 @Injectable()
 export class ConfigClientService {
@@ -37,23 +39,39 @@ export class ConfigClientService {
   private async processRepository(
     url: string,
     type: IConfigServer["type"],
-    repository: INestConfigRepository | ISpringConfigRepository
+    repository: INestConfigRepository | ISpringConfigRepository,
+    httpClient: IHttpClient
   ) {
     const useCase = this.useCaseRegistry[type];
-    return await useCase(url, repository as any);
+    return await useCase(url, repository as any, httpClient);
   }
 
   async getMultipleServers(servers: IConfigServer[]) {
     const allConfigs: Record<string, any> = {};
 
     for (const server of servers) {
-      const { url, type, logging: enableLogging, alias, repositories } = server;
+      const {
+        url,
+        type,
+        logging: enableLogging,
+        alias,
+        repositories,
+        httpClient,
+      } = server;
+
+      // Use provided HTTP client or default to axios for backward compatibility
+      const clientToUse = httpClient || DefaultHttpClient.create();
 
       for (const repository of repositories) {
         const { repo, application, profile } = repository as any;
 
         try {
-          const response = await this.processRepository(url, type, repository);
+          const response = await this.processRepository(
+            url,
+            type,
+            repository,
+            clientToUse
+          );
           const data = response.data;
 
           Object.entries(data).forEach(([key, value]) => {
@@ -72,6 +90,7 @@ export class ConfigClientService {
               application,
               profile,
               auth: repository.auth,
+              httpClient: clientToUse.getName(),
             });
           }
 

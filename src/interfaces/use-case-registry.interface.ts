@@ -1,5 +1,9 @@
+import type { IHttpClient } from "./http-client.interface";
+
 export interface IConfigServerUseCase<T> {
-  (url: string, config: T): Promise<{ data: Record<string, any> }>;
+  (url: string, config: T, httpClient: IHttpClient): Promise<{
+    data: Record<string, any>;
+  }>;
 }
 
 export interface IConfigServerRegistry {

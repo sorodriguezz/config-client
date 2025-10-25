@@ -6,6 +6,7 @@ export interface ILoggingParams {
   application?: string;
   profile?: string;
   auth?: any;
+  httpClient?: string;
 }
 
 export const logging = (logger: Logger, params: ILoggingParams) => {
@@ -18,5 +19,7 @@ export const logging = (logger: Logger, params: ILoggingParams) => {
   logger.log(`📦 Application: ${params.application}`);
   logger.log(`🗒️ Profile: ${params.profile}`);
 
-  logger.log(`🔐 Ath  basic: ${params.auth ? "✅" : "❌"}`);
+  logger.log(`🔐 Auth basic: ${params.auth ? "On" : "Off"}`);
+
+  logger.log(`🌐 HTTP Client: ${params.httpClient}`);
 };

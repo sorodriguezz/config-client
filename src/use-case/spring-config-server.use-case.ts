@@ -1,24 +1,24 @@
-import axios, { type AxiosRequestConfig } from "axios";
 import { type ISpringConfigRepository } from "../interfaces/config-server.interface";
+import { type IHttpClient } from "../interfaces/http-client.interface";
 
 export const springConfigServerUseCase = async (
   url: string,
-  config: ISpringConfigRepository
+  config: ISpringConfigRepository,
+  httpClient: IHttpClient
 ) => {
   const { application, profile, auth } = config;
 
-  const objAxios: AxiosRequestConfig = {
-    url: `${url}/${application}/${profile}`,
+  const requestOptions = {
+    auth: auth
+      ? {
+          username: auth.username,
+          password: auth.password,
+        }
+      : undefined,
   };
 
-  if (auth) {
-    objAxios.auth = {
-      username: auth.username,
-      password: auth.password,
-    };
-  }
-
-  const response = await axios.get(objAxios.url!, objAxios);
+  const requestUrl = `${url}/${application}/${profile}`;
+  const response = await httpClient.get(requestUrl, requestOptions);
 
   const properties: Record<string, any> = {};
 

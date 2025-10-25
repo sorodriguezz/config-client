@@ -27,6 +27,87 @@ npm i @sorodriguez/config-client
 - NestJS integration
 - Axios for HTTP requests
 
+## HTTP Client Configuration
+
+You can customize the HTTP client used for requests. By default, the library uses Axios, but you can specify a different client:
+
+### Using Axios (Default)
+
+```typescript
+import { ConfigClientModule } from "@sorodriguez/config-client";
+
+@Module({
+  imports: [
+    ConfigClientModule.forRoot([
+      {
+        url: "http://localhost:8888",
+        type: "spring-config-server",
+        // httpClient not specified - uses Axios by default
+        repositories: [...]
+      }
+    ])
+  ]
+})
+export class AppModule {}
+```
+
+### Using Fetch
+
+```typescript
+import { ConfigClientModule, FetchHttpAdapter } from "@sorodriguez/config-client";
+
+@Module({
+  imports: [
+    ConfigClientModule.forRoot([
+      {
+        url: "http://localhost:8888",
+        type: "spring-config-server",
+        httpClient: new FetchHttpAdapter(),
+        repositories: [...]
+      }
+    ])
+  ]
+})
+export class AppModule {}
+```
+
+### Using Custom HTTP Client
+
+```typescript
+import { ConfigClientModule } from "@sorodriguez/config-client";
+import { IHttpClient, IHttpRequestOptions, IHttpResponse } from "@sorodriguez/config-client";
+
+class CustomHttpClient implements IHttpClient {
+  async get<T>(url: string, options?: IHttpRequestOptions): Promise<IHttpResponse<T>> {
+    // Your custom HTTP implementation
+    const response = await yourHttpLibrary.get(url, options);
+    return {
+      data: response.data,
+      status: response.status,
+      statusText: response.statusText
+    };
+  }
+
+  getName(): string {
+    return "custom";
+  }
+}
+
+@Module({
+  imports: [
+    ConfigClientModule.forRoot([
+      {
+        url: "http://localhost:8888",
+        type: "spring-config-server",
+        httpClient: new CustomHttpClient(),
+        repositories: [...]
+      }
+    ])
+  ]
+})
+export class AppModule {}
+```
+
 ## Config Server Types
 
 This library supports two types of config servers:
