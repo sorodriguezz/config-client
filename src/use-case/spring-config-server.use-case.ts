@@ -1,9 +1,9 @@
 import axios, { type AxiosRequestConfig } from "axios";
-import { type IConfigRepository } from "../interfaces/config-repository.interface";
+import { type ISpringConfigRepository } from "../interfaces/config-server.interface";
 
 export const springConfigServerUseCase = async (
   url: string,
-  config: IConfigRepository
+  config: ISpringConfigRepository
 ) => {
   const { application, profile, auth } = config;
 

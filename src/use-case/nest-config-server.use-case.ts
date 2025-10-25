@@ -1,11 +1,12 @@
 import axios, { type AxiosRequestConfig } from "axios";
-import { type IConfigRepository } from "../interfaces/config-repository.interface";
+import { type INestConfigRepository } from "../interfaces/config-server.interface";
 
 export const nestConfigServerUseCase = async (
   url: string,
-  config: IConfigRepository
+  config: INestConfigRepository
 ) => {
   const { repo, application, profile, auth } = config;
+
   const objAxios: AxiosRequestConfig = {
     params: {
       repo,

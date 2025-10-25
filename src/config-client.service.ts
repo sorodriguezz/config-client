@@ -1,14 +1,24 @@
-import { Inject, Injectable, Logger } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
 
 import { nestConfigServerUseCase } from "./use-case/nest-config-server.use-case";
 import { springConfigServerUseCase } from "./use-case/spring-config-server.use-case";
 import { logging } from "./utils/logging";
 
-import type { IConfigServer } from "./interfaces/config-server.interface";
+import type {
+  IConfigServer,
+  INestConfigRepository,
+  ISpringConfigRepository,
+} from "./interfaces/config-server.interface";
+import type { IConfigServerRegistry } from "./interfaces/use-case-registry.interface";
 
 @Injectable()
 export class ConfigClientService {
   private logger = new Logger(ConfigClientService.name);
+
+  private readonly useCaseRegistry: IConfigServerRegistry = {
+    "nest-config-server": nestConfigServerUseCase,
+    "spring-config-server": springConfigServerUseCase,
+  };
 
   get(key: string, configs: Record<string, any>): string {
     if (!configs || typeof configs !== "object") {
@@ -24,6 +34,15 @@ export class ConfigClientService {
     return configs[key] || process.env[key] || "";
   }
 
+  private async processRepository(
+    url: string,
+    type: IConfigServer["type"],
+    repository: INestConfigRepository | ISpringConfigRepository
+  ) {
+    const useCase = this.useCaseRegistry[type];
+    return await useCase(url, repository as any);
+  }
+
   async getMultipleServers(servers: IConfigServer[]) {
     const allConfigs: Record<string, any> = {};
 
@@ -34,12 +53,7 @@ export class ConfigClientService {
         const { repo, application, profile } = repository;
 
         try {
-          const useCases = {
-            "nest-config-server": nestConfigServerUseCase,
-            "spring-config-server": springConfigServerUseCase,
-          };
-
-          const response = await useCases[type](url, repository);
+          const response = await this.processRepository(url, type, repository);
           const data = response.data;
 
           Object.entries(data).forEach(([key, value]) => {

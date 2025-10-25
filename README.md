@@ -1,4 +1,3 @@
-
 # Config Client
 
 [English](#config-client) | [Español](./README.es.md)

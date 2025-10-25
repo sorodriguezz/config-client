@@ -1,9 +1,29 @@
 import type { IConfigRepository } from "./config-repository.interface";
 
-export interface IConfigServer {
+interface IBaseConfigServer {
   url: string;
-  type: "nest-config-server" | "spring-config-server";
   logging?: boolean;
   alias?: string;
-  repositories: IConfigRepository[];
 }
+
+interface INestConfigRepository extends IConfigRepository {
+  repo: string;
+}
+
+interface ISpringConfigRepository extends IConfigRepository {
+  repo?: string;
+}
+
+export interface INestConfigServer extends IBaseConfigServer {
+  type: "nest-config-server";
+  repositories: INestConfigRepository[];
+}
+
+export interface ISpringConfigServer extends IBaseConfigServer {
+  type: "spring-config-server";
+  repositories: ISpringConfigRepository[];
+}
+
+export type IConfigServer = INestConfigServer | ISpringConfigServer;
+
+export type { INestConfigRepository, ISpringConfigRepository };
