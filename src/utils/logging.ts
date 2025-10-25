@@ -11,11 +11,13 @@ export interface ILoggingParams {
 export const logging = (logger: Logger, params: ILoggingParams) => {
   logger.log(`✅ Configuration loaded from Config Server: ${params.url}`);
 
-  if (params.repo) {
+  if (params.repo && params.repo !== "undefined" && params.repo.trim() !== "") {
     logger.log(`🗄️ Repository: ${params.repo}`);
   }
 
   logger.log(`📦 Application: ${params.application}`);
   logger.log(`🗒️ Profile: ${params.profile}`);
-  logger.log(`🔐 Auth basic: ${params.auth ? "✅" : "❌"}`);
+  logger.log(
+    `🔐 Auth basic: ${params.auth && params.auth.username ? "✅" : "❌"}`
+  );
 };
