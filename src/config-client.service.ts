@@ -10,12 +10,12 @@ import type { IConfigOptions } from "./interfaces/config-options.interface";
 export class ConfigClientService {
   private logger = new Logger(ConfigClientService.name);
 
-  constructor(
-    @Inject("CONFIG_VALUES") private config: Record<string, string>
-  ) {}
+  get(key: string, configs: Record<string, any>): string {
+    return configs[key] || process.env[key] || "";
+  }
 
-  get(key: string): string {
-    return this.config[key] || process.env[key] || "";
+  static getConfig(key: string, configs: Record<string, any>): string {
+    return configs[key] || process.env[key] || "";
   }
 
   async getRepositories({ url, config, options }: IConfigOptions) {
@@ -54,5 +54,7 @@ export class ConfigClientService {
         this.logger.error("Error cargando configuración remota:", err.message);
       }
     }
+
+    return allConfigs;
   }
 }

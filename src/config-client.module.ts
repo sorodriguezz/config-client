@@ -5,6 +5,8 @@ import { ConfigClientService } from "./config-client.service";
 import type { IConfigRepository } from "./interfaces/config-repository.interface";
 import type { IConfigClient } from "./interfaces/config-client.interface";
 
+export const CONFIG_CLIENT_VALUES = Symbol("CONFIG_CLIENT_VALUES");
+
 @Global()
 @Module({})
 export class ConfigClientModule {
@@ -14,9 +16,9 @@ export class ConfigClientModule {
     options: IConfigRepository[]
   ): DynamicModule {
     const configProvider = {
-      provide: "CONFIG_VALUES",
+      provide: CONFIG_CLIENT_VALUES,
       useFactory: async () => {
-        const configClient = new ConfigClientService({});
+        const configClient = new ConfigClientService();
         return configClient.getRepositories({ url, config, options });
       },
     };
@@ -24,7 +26,7 @@ export class ConfigClientModule {
     return {
       module: ConfigClientModule,
       providers: [ConfigClientService, configProvider],
-      exports: ["CONFIG_VALUES"],
+      exports: [CONFIG_CLIENT_VALUES],
     };
   }
 }
