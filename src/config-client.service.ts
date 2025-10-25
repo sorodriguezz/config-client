@@ -4,7 +4,7 @@ import { nestConfigServerUseCase } from "./use-case/nest-config-server.use-case"
 import { springConfigServerUseCase } from "./use-case/spring-config-server.use-case";
 import { logging } from "./utils/logging";
 
-import type { IConfigOptions } from "./interfaces/config-options.interface";
+import type { IConfigServer } from "./interfaces/config-server.interface";
 
 @Injectable()
 export class ConfigClientService {
@@ -18,40 +18,47 @@ export class ConfigClientService {
     return configs[key] || process.env[key] || "";
   }
 
-  async getRepositories({ url, config, options }: IConfigOptions) {
+  async getMultipleServers(servers: IConfigServer[]) {
     const allConfigs: Record<string, any> = {};
 
-    for (const option of options) {
-      const { repo, application, profile } = option;
+    for (const server of servers) {
+      const { url, type, logging: enableLogging, repositories } = server;
 
-      try {
-        const useCases = {
-          "nest-config-server": nestConfigServerUseCase,
-          "spring-config-server": springConfigServerUseCase,
-        };
+      for (const repository of repositories) {
+        const { repo, application, profile } = repository;
 
-        const response = await useCases[config.type](url, option);
-        const data = response.data;
+        try {
+          const useCases = {
+            "nest-config-server": nestConfigServerUseCase,
+            "spring-config-server": springConfigServerUseCase,
+          };
 
-        Object.entries(data).forEach(([key, value]) => {
-          if (!process.env[key]) {
-            process.env[key] = String(value);
-          }
-          allConfigs[key] = value;
-        });
+          const response = await useCases[type](url, repository);
+          const data = response.data;
 
-        if (config.logging) {
-          logging(this.logger, {
-            url,
-            repo,
-            application,
-            profile,
+          Object.entries(data).forEach(([key, value]) => {
+            if (!process.env[key]) {
+              process.env[key] = String(value);
+            }
+            allConfigs[key] = value;
           });
-        }
 
-        this.logger.log(`Configuration loaded`);
-      } catch (err: any) {
-        this.logger.error("Error cargando configuración remota:", err.message);
+          if (enableLogging) {
+            logging(this.logger, {
+              url,
+              repo,
+              application,
+              profile,
+            });
+          }
+
+          this.logger.log(`Configuration loaded from ${url} - ${application}`);
+        } catch (err: any) {
+          this.logger.error(
+            `Error loading configuration from ${url} - ${application}:`,
+            err.message
+          );
+        }
       }
     }
 
