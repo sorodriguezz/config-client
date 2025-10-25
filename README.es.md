@@ -1,4 +1,3 @@
-````markdown
 # Config Client
 
 [English](./README.md) | [Español](#config-client)
@@ -491,4 +490,3 @@ Si encuentras algún problema o tienes preguntas, por favor:
 1. Revisa la [documentación](./README.es.md)
 2. Busca en [issues existentes](https://github.com/sorodriguezz/config-client/issues)
 3. Crea un [nuevo issue](https://github.com/sorodriguezz/config-client/issues/new) con información detallada
-````
