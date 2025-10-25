@@ -10,9 +10,7 @@ interface INestConfigRepository extends IConfigRepository {
   repo: string;
 }
 
-interface ISpringConfigRepository extends IConfigRepository {
-  repo?: string;
-}
+interface ISpringConfigRepository extends IConfigRepository {}
 
 export interface INestConfigServer extends IBaseConfigServer {
   type: "nest-config-server";

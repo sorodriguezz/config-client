@@ -61,7 +61,7 @@ import { ConfigClientModule } from "@sorodriguez/config-client";
         alias: "nest", // Optional: prefix for config keys
         repositories: [
           {
-            repo: "service-configuration",
+            repo: "service-configuration", // REQUIRED for nest-config-server
             application: "my-service",
             profile: "dev",
             auth: {
@@ -80,7 +80,6 @@ import { ConfigClientModule } from "@sorodriguez/config-client";
           {
             application: "shared-config",
             profile: "prod",
-            repo: "", // Not required for Spring Config Server
             auth: {
               username: "admin",
               password: "admin",
@@ -337,23 +336,40 @@ Each server can load from multiple repositories:
 
 ## Configuration Reference
 
+## Configuration Reference
+
 ### IConfigServer
 
+The `IConfigServer` type is a discriminated union that ensures type safety based on the server type:
+
+#### For nest-config-server:
+
 ```typescript
-interface IConfigServer {
+interface INestConfigServer {
   url: string; // Config server URL
-  type: "nest-config-server" | "spring-config-server"; // Server type
+  type: "nest-config-server"; // Server type
   logging?: boolean; // Enable/disable logging
   alias?: string; // Optional prefix for config keys
-  repositories: IConfigRepository[]; // Array of repositories to load
+  repositories: INestConfigRepository[]; // Array of repositories (repo required)
 }
 ```
 
-### IConfigRepository
+#### For spring-config-server:
+
+```typescript
+interface ISpringConfigServer {
+  url: string; // Config server URL
+  type: "spring-config-server"; // Server type
+  logging?: boolean; // Enable/disable logging
+  alias?: string; // Optional prefix for config keys
+  repositories: ISpringConfigRepository[]; // Array of repositories (repo optional)
+}
+```
+
+### IConfigRepository (Base)
 
 ```typescript
 interface IConfigRepository {
-  repo: string | undefined; // Repository name (required for nest-config-server)
   application: string; // Application name
   profile: string; // Profile (dev, prod, test, etc.)
   auth?: {
@@ -363,6 +379,32 @@ interface IConfigRepository {
   };
 }
 ```
+
+### INestConfigRepository
+
+```typescript
+interface INestConfigRepository extends IConfigRepository {
+  repo: string; // Repository name (REQUIRED)
+}
+```
+
+### ISpringConfigRepository
+
+```typescript
+interface ISpringConfigRepository extends IConfigRepository {
+  // repo is not required for Spring Cloud Config Server
+  // All properties inherited from IConfigRepository
+}
+```
+
+## Type Safety
+
+The library uses TypeScript's discriminated unions to ensure type safety:
+
+- **When `type` is `"nest-config-server"`**: TypeScript **requires** the `repo` field in repositories
+- **When `type` is `"spring-config-server"`**: TypeScript makes the `repo` field **optional** in repositories
+
+This prevents runtime errors and provides excellent IntelliSense support.
 
 ## API Reference
 
@@ -462,6 +504,62 @@ The library includes robust error handling:
 4. **Implement fallbacks** in your application for critical configuration values
 5. **Use environment-specific profiles** (dev, test, prod)
 
+## Extending with New Config Servers
+
+The library is designed for easy extension. To add a new config server type:
+
+### 1. Define the Repository Interface
+
+```typescript
+// For example, adding Azure Config Server support
+interface IAzureConfigRepository extends IConfigRepository {
+  tenantId: string; // Required for Azure
+  subscriptionId?: string; // Optional
+}
+```
+
+### 2. Define the Server Interface
+
+```typescript
+interface IAzureConfigServer extends IBaseConfigServer {
+  type: "azure-config-server";
+  repositories: IAzureConfigRepository[];
+}
+```
+
+### 3. Update the Union Type
+
+```typescript
+export type IConfigServer =
+  | INestConfigServer
+  | ISpringConfigServer
+  | IAzureConfigServer; // Add your new type
+```
+
+### 4. Create the Use Case
+
+```typescript
+export const azureConfigServerUseCase = async (
+  url: string,
+  config: IAzureConfigRepository
+) => {
+  // Your Azure-specific implementation
+  return { data: configProperties };
+};
+```
+
+### 5. Register in the Service
+
+```typescript
+private readonly useCaseRegistry = {
+  "nest-config-server": nestConfigServerUseCase,
+  "spring-config-server": springConfigServerUseCase,
+  "azure-config-server": azureConfigServerUseCase, // Add here
+};
+```
+
+The type system will automatically enforce the correct repository structure for each server type!
+
 ## Examples
 
 Check out the [examples directory](./examples) for complete working examples:
@@ -470,6 +568,7 @@ Check out the [examples directory](./examples) for complete working examples:
 - Express.js integration
 - TypeScript standalone usage
 - Error handling patterns
+- Adding custom config server types
 
 ## License
 

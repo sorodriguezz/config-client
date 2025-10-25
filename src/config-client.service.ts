@@ -50,7 +50,7 @@ export class ConfigClientService {
       const { url, type, logging: enableLogging, alias, repositories } = server;
 
       for (const repository of repositories) {
-        const { repo, application, profile } = repository;
+        const { repo, application, profile } = repository as any;
 
         try {
           const response = await this.processRepository(url, type, repository);
@@ -71,6 +71,7 @@ export class ConfigClientService {
               repo,
               application,
               profile,
+              auth: repository.auth,
             });
           }
 
