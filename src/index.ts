@@ -3,3 +3,4 @@ export * from "./config-client.service";
 
 export * from "./interfaces/config-options.interface";
 export * from "./interfaces/config-repository.interface";
+export * from "./interfaces/config-client.interface";

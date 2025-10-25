@@ -1,7 +1,10 @@
 import { Inject, Injectable, Logger } from "@nestjs/common";
-import { defaultUseCase } from "./use-case/default.use-case";
+
+import { nestConfigServerUseCase } from "./use-case/nest-config-server.use-case";
 import { springConfigServerUseCase } from "./use-case/spring-config-server.use-case";
-import { type IConfigOptions } from "./interfaces/config-options.interface";
+import { logging } from "./utils/logging";
+
+import type { IConfigOptions } from "./interfaces/config-options.interface";
 
 @Injectable()
 export class ConfigClientService {
@@ -15,7 +18,7 @@ export class ConfigClientService {
     return this.config[key] || process.env[key] || "";
   }
 
-  async getRepositories({ url, options }: IConfigOptions) {
+  async getRepositories({ url, config, options }: IConfigOptions) {
     const allConfigs: Record<string, any> = {};
 
     for (const option of options) {
@@ -23,11 +26,11 @@ export class ConfigClientService {
 
       try {
         const useCases = {
-          default: defaultUseCase,
+          "nest-config-server": nestConfigServerUseCase,
           "spring-config-server": springConfigServerUseCase,
         };
 
-        const response = await useCases[option.type](url, option);
+        const response = await useCases[config.type](url, option);
         const data = response.data;
 
         Object.entries(data).forEach(([key, value]) => {
@@ -37,12 +40,16 @@ export class ConfigClientService {
           allConfigs[key] = value;
         });
 
-        this.logger.log(`✅ Configuration loaded from Config Server: ${url}`);
-        if (repo) {
-          this.logger.log(`🗄️ Repository: ${repo}`);
+        if (config.logging) {
+          logging(this.logger, {
+            url,
+            repo,
+            application,
+            profile,
+          });
         }
-        this.logger.log(`📦 Application: ${application}`);
-        this.logger.log(`🗒️ Profile: ${profile}`);
+
+        this.logger.log(`Configuration loaded`);
       } catch (err: any) {
         this.logger.error("Error cargando configuración remota:", err.message);
       }

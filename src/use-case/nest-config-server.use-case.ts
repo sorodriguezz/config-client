@@ -1,7 +1,7 @@
 import axios, { type AxiosRequestConfig } from "axios";
 import { type IConfigRepository } from "../interfaces/config-repository.interface";
 
-export const defaultUseCase = async (
+export const nestConfigServerUseCase = async (
   url: string,
   config: IConfigRepository
 ) => {
