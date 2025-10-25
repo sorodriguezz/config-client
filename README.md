@@ -1,17 +1,20 @@
+````markdown
 # Config Client
 
 [English](#config-client) | [Español](./README.es.md)
 
-A lightweight client for loading configuration from a Config Server. This library is built with TypeScript and provides seamless integration with NestJS applications, but can also be used with plain Node.js and Express applications.
+A powerful and flexible client for loading configuration from multiple Config Servers. This library is built with TypeScript and provides seamless integration with NestJS applications, while also supporting plain Node.js and Express applications.
 
 ## Features
 
-- Load configuration from a Config Server
-- Support for multiple repositories, applications, and profiles
-- Support for different config server types (default and Spring Config Server)
-- Basic authentication support
-- Automatic environment variable population
-- Global module for NestJS applications
+- 🔧 **Multiple Config Server Support**: Works with both custom config servers and Spring Cloud Config Server
+- 🌐 **Multi-Server Configuration**: Connect to multiple config servers simultaneously
+- 🏷️ **Alias Support**: Add prefixes to configuration keys to avoid conflicts
+- 🔒 **Authentication**: Built-in support for basic authentication
+- 🌍 **Environment Variables**: Automatic population of process.env
+- 🎯 **Type-Safe**: Full TypeScript support with proper type inference
+- 🔄 **Version Compatibility**: Robust handling of different Spring Cloud Config versions
+- 📦 **Framework Agnostic**: Works with NestJS, Express, or plain Node.js
 
 ## Installation
 
@@ -29,128 +32,159 @@ npm i @sorodriguez/config-client
 
 This library supports two types of config servers:
 
-- **default**: Uses path parameters in the URL (e.g., `/application/profile`). Suitable for generic config servers.
-- **spring-config-server**: Uses query parameters (e.g., `?repo=...&application=...&profile=...`). Designed for Spring Cloud Config Server compatibility.
+### 1. **nest-config-server**
+
+Uses query parameters in the URL (e.g., `?repo=...&application=...&profile=...`).
+Designed for custom NestJS config servers.
+
+### 2. **spring-config-server**
+
+Uses path parameters in the URL (e.g., `/application/profile`).
+Compatible with Spring Cloud Config Server (all versions with automatic fallback handling).
 
 ## Usage
 
 ### With NestJS
 
-Import the `ConfigClientModule` into your application's root module and use the `forRoot` method to configure it:
+Import the `ConfigClientModule` into your application's root module:
 
 ```typescript
 import { Module } from "@nestjs/common";
-import { ConfigClientModule } from "config-client";
-import { AppController } from "./app.controller";
-import { AppService } from "./app.service";
+import { ConfigClientModule } from "@sorodriguez/config-client";
 
 @Module({
   imports: [
-    ConfigClientModule.forRoot("https://your-config-server-url/config", [
+    ConfigClientModule.forRoot([
       {
-        type: "default",
-        application: "your-application-name",
-        profile: "dev",
-        auth: {
-          username: "username",
-          password: "password",
-        },
+        url: "http://localhost:8888",
+        type: "nest-config-server",
+        logging: true,
+        alias: "nest", // Optional: prefix for config keys
+        repositories: [
+          {
+            repo: "service-configuration",
+            application: "my-service",
+            profile: "dev",
+            auth: {
+              username: "admin",
+              password: "admin",
+            },
+          },
+        ],
+      },
+      {
+        url: "http://localhost:8889",
+        type: "spring-config-server",
+        logging: true,
+        alias: "spring", // Optional: prefix for config keys
+        repositories: [
+          {
+            application: "shared-config",
+            profile: "prod",
+            repo: "", // Not required for Spring Config Server
+            auth: {
+              username: "admin",
+              password: "admin",
+            },
+          },
+        ],
       },
     ]),
   ],
-  controllers: [AppController],
-  providers: [AppService],
 })
 export class AppModule {}
 ```
 
-You can then inject the configuration values using the `@Inject` decorator:
+#### Inject and Use Configuration
 
 ```typescript
 import { Injectable, Inject } from "@nestjs/common";
+import {
+  CONFIG_CLIENT_VALUES,
+  ConfigClientService,
+} from "@sorodriguez/config-client";
 
 @Injectable()
 export class AppService {
   constructor(
-    @Inject("CONFIG_VALUES") private readonly config: Record<string, any>
+    @Inject(CONFIG_CLIENT_VALUES)
+    private readonly config: Record<string, any>
   ) {}
 
-  getConfig(key: string): any {
-    return this.config[key];
+  // Method 1: Direct access
+  getDatabaseUrl(): string {
+    return this.config["spring.datasource.url"] || "default-url";
+  }
+
+  // Method 2: Using static helper method (recommended)
+  getConfigValue(key: string): string {
+    return ConfigClientService.getConfig(key, this.config);
+  }
+
+  // Examples with aliases
+  getAliasedConfig(): any {
+    return {
+      // If you used alias "spring", keys will be prefixed
+      springDbUrl: this.getConfigValue("spring.datasource.url"),
+      nestAppName: this.getConfigValue("nest.app.name"),
+      // Without alias, keys remain as-is
+      directValue: this.getConfigValue("some.direct.property"),
+    };
   }
 }
 ```
 
-### With TypeScript (non-NestJS)
-
-You can use the module with plain TypeScript as well:
-
-```typescript
-import { ConfigClientModule } from "config-client";
-
-async function loadConfig() {
-  const configModule = ConfigClientModule.forRoot(
-    "https://your-config-server-url/config",
-    [
-      {
-        type: "default",
-        application: "your-application-name",
-        profile: "dev",
-        auth: {
-          username: "username",
-          password: "password",
-        },
-      },
-    ]
-  );
-
-  // Manually invoke the factory function
-  const configProvider = configModule.providers.find(
-    (p) => p.provide === "CONFIG_VALUES"
-  );
-  await configProvider.useFactory();
-
-  // Now your configuration is loaded in process.env
-  console.log(`Database URL: ${process.env.DATABASE_URL}`);
-}
-
-loadConfig().catch(console.error);
-```
-
-### With JavaScript (Node.js/Express)
+### With Express/Node.js
 
 ```javascript
-const { ConfigClientModule } = require("config-client");
 const express = require("express");
+const {
+  ConfigClientModule,
+  ConfigClientService,
+} = require("@sorodriguez/config-client");
+
 const app = express();
 
 async function bootstrap() {
   try {
-    // Configure the config client
-    const configModule = ConfigClientModule.forRoot(
-      "https://your-config-server-url/config",
-      [
-        {
-          type: "default",
-          application: "your-application-name",
-          profile: "dev",
-          auth: {
-            username: "username",
-            password: "password",
+    // Load configuration from multiple servers
+    const configModule = ConfigClientModule.forRoot([
+      {
+        url: "http://localhost:8888",
+        type: "nest-config-server",
+        logging: true,
+        repositories: [
+          {
+            repo: "my-config-repo",
+            application: "my-app",
+            profile: "dev",
+            auth: {
+              username: "admin",
+              password: "admin",
+            },
           },
-        },
-      ]
-    );
+        ],
+      },
+    ]);
 
-    // Manually invoke the factory function
+    // Manually invoke the configuration loading
     const configProvider = configModule.providers.find(
-      (p) => p.provide === "CONFIG_VALUES"
+      (p) => p.provide === "CONFIG_CLIENT_VALUES"
     );
-    await configProvider.useFactory();
+    const config = await configProvider.useFactory();
 
-    // Start your Express app
+    // Configuration is now available in process.env and config object
+    app.get("/config/:key", (req, res) => {
+      const key = req.params.key;
+      const value = ConfigClientService.getConfig(key, config);
+      res.json({ key, value });
+    });
+
     app.get("/", (req, res) => {
-      res.send("Configuration loaded successfully!");
+      res.json({
+        message: "Configuration loaded successfully!",
+        configKeys: Object.keys(config),
+      });
     });
 
     const port = process.env.PORT || 3000;
@@ -166,90 +200,295 @@ async function bootstrap() {
 bootstrap();
 ```
 
-## Multiple Connections
-
-You can connect to multiple repositories, applications, or profiles by providing an array of configuration options:
+### TypeScript (Non-NestJS)
 
 ```typescript
-ConfigClientModule.forRoot("https://your-config-server-url/config", [
-  // First configuration
-  {
-    type: "default",
-    application: "api-service",
-    profile: "dev",
-    auth: {
-      username: "username1",
-      password: "password1",
+import {
+  ConfigClientModule,
+  ConfigClientService,
+} from "@sorodriguez/config-client";
+
+async function loadConfig() {
+  const configModule = ConfigClientModule.forRoot([
+    {
+      url: "https://your-config-server.com",
+      type: "spring-config-server",
+      logging: true,
+      repositories: [
+        {
+          application: "my-application",
+          profile: "production",
+          repo: undefined, // Not needed for Spring Config Server
+        },
+      ],
     },
+  ]);
+
+  const configProvider = configModule.providers.find(
+    (p) => p.provide === "CONFIG_CLIENT_VALUES"
+  );
+  const config = await configProvider.useFactory();
+
+  // Access configuration
+  const dbUrl = ConfigClientService.getConfig("database.url", config);
+  const apiKey = ConfigClientService.getConfig("api.key", config);
+
+  console.log(`Database URL: ${dbUrl}`);
+  console.log(`API Key: ${apiKey}`);
+
+  return config;
+}
+
+loadConfig().catch(console.error);
+```
+
+## Advanced Configuration
+
+### Multiple Servers with Aliases
+
+Use aliases to avoid configuration key conflicts when connecting to multiple servers:
+
+```typescript
+ConfigClientModule.forRoot([
+  {
+    url: "http://localhost:8888",
+    type: "nest-config-server",
+    alias: "primary", // Keys will be prefixed with "primary."
+    repositories: [
+      {
+        repo: "main-config",
+        application: "my-service",
+        profile: "dev",
+      },
+    ],
   },
-  // Second configuration
   {
+    url: "http://localhost:8889",
     type: "spring-config-server",
-    repo: "shared-config-repo",
-    application: "common",
-    profile: "prod",
-    auth: {
-      username: "username2",
-      password: "password2",
-    },
+    alias: "secondary", // Keys will be prefixed with "secondary."
+    repositories: [
+      {
+        application: "shared-config",
+        profile: "dev",
+        repo: "",
+      },
+    ],
   },
 ]);
 ```
 
-This will load configuration from both sources and merge them into a single configuration object. If there are duplicate keys, the first one encountered will be used for environment variables.
+Result configuration keys:
 
-## Connecting to Different Config Servers
+```
+primary.database.url
+primary.app.name
+secondary.api.endpoint
+secondary.cache.ttl
+```
 
-If you need to connect to multiple config servers, you can create separate instances of the ConfigClientModule:
+### Without Aliases (Default Behavior)
 
 ```typescript
-import { Module } from "@nestjs/common";
-import { ConfigClientModule } from "config-client";
+ConfigClientModule.forRoot([
+  {
+    url: "http://localhost:8888",
+    type: "nest-config-server",
+    // No alias - keys remain unchanged
+    repositories: [...],
+  },
+])
+```
 
-@Module({
-  imports: [
-    // Primary config server
-    ConfigClientModule.forRoot("https://primary-config-server/config", [
-      {
-        type: "default",
-        application: "your-app",
-        profile: "dev",
-      },
-    ]),
-    // Secondary config server
-    ConfigClientModule.forRoot("https://primary-config-server/config", [
-      {
-        type: "default",
-        application: "your-app",
-        profile: "prod",
-      },
-    ]),
+Result configuration keys:
+
+```
+database.url
+app.name
+api.endpoint
+```
+
+### Multiple Repositories per Server
+
+Each server can load from multiple repositories:
+
+```typescript
+{
+  url: "http://localhost:8888",
+  type: "nest-config-server",
+  logging: true,
+  repositories: [
+    {
+      repo: "database-config",
+      application: "my-service",
+      profile: "prod",
+    },
+    {
+      repo: "cache-config",
+      application: "my-service",
+      profile: "prod",
+    },
+    {
+      repo: "logging-config",
+      application: "shared",
+      profile: "prod",
+    },
   ],
-})
-export class AppModule {}
+}
+```
+
+## Configuration Reference
+
+### IConfigServer
+
+```typescript
+interface IConfigServer {
+  url: string; // Config server URL
+  type: "nest-config-server" | "spring-config-server"; // Server type
+  logging?: boolean; // Enable/disable logging
+  alias?: string; // Optional prefix for config keys
+  repositories: IConfigRepository[]; // Array of repositories to load
+}
+```
+
+### IConfigRepository
+
+```typescript
+interface IConfigRepository {
+  repo: string | undefined; // Repository name (required for nest-config-server)
+  application: string; // Application name
+  profile: string; // Profile (dev, prod, test, etc.)
+  auth?: {
+    // Optional authentication
+    username: string;
+    password: string;
+  };
+}
 ```
 
 ## API Reference
 
+### ConfigClientService
+
+#### Static Methods
+
+**`getConfig(key: string, configs: Record<string, any>): string`**
+
+Safely retrieves a configuration value with fallback to environment variables.
+
+```typescript
+const value = ConfigClientService.getConfig("database.url", configs);
+// Returns: configs['database.url'] || process.env['database.url'] || ""
+```
+
+#### Instance Methods
+
+**`get(key: string, configs: Record<string, any>): string`**
+
+Instance version of getConfig (use static version for better performance).
+
 ### ConfigClientModule
 
-#### `forRoot(url: string, options: ConfigClientOptions[]): DynamicModule`
+**`forRoot(servers: IConfigServer[]): DynamicModule`**
 
-Creates and configures the ConfigClientModule.
+Creates and configures the ConfigClientModule for multiple servers.
 
-- `url`: The URL of the Config Server
-- `options`: An array of configuration options
+## Spring Cloud Config Compatibility
 
-### ConfigClientOptions
+This library automatically handles different versions of Spring Cloud Config Server:
 
-- `type`: The type of config server ('default' or 'spring-config-server')
-- `repo`: The name of the repository (required for 'spring-config-server', optional for 'default')
-- `application`: The name of the application
-- `profile`: The profile to use (e.g., 'dev', 'prod')
-- `auth`: (Optional) Authentication credentials
-  - `username`: Username for basic authentication
-  - `password`: Password for basic authentication
+- **Primary**: `propertySources[].source` (standard structure)
+- **Fallback 1**: Direct `source` object
+- **Fallback 2**: All properties except metadata (`name`, `profiles`, `label`, `version`, `state`)
+
+This ensures compatibility with:
+
+- Spring Cloud Config 2.x
+- Spring Cloud Config 3.x
+- Custom implementations
+- Legacy versions
+
+## Migration Guide
+
+### From v1.x to v2.x
+
+**Old API:**
+
+```typescript
+ConfigClientModule.forRoot(
+  "http://localhost:8888",
+  { type: "nest-config-server", logging: true },
+  [{ repo: "config", application: "app", profile: "dev" }]
+);
+```
+
+**New API:**
+
+```typescript
+ConfigClientModule.forRoot([
+  {
+    url: "http://localhost:8888",
+    type: "nest-config-server",
+    logging: true,
+    repositories: [{ repo: "config", application: "app", profile: "dev" }],
+  },
+]);
+```
+
+### Injection Token Change
+
+Update your injection:
+
+```typescript
+// Old
+@Inject("CONFIG_VALUES")
+
+// New
+@Inject(CONFIG_CLIENT_VALUES)
+```
+
+## Error Handling
+
+The library includes robust error handling:
+
+- **Network failures**: Logged and continue with other servers
+- **Authentication errors**: Detailed error messages
+- **Malformed responses**: Graceful fallback parsing
+- **Missing configurations**: Fallback to environment variables
+
+## Best Practices
+
+1. **Use aliases** when connecting to multiple servers to avoid key conflicts
+2. **Use the static `getConfig` method** for better performance and type safety
+3. **Enable logging** during development to debug configuration loading
+4. **Implement fallbacks** in your application for critical configuration values
+5. **Use environment-specific profiles** (dev, test, prod)
+
+## Examples
+
+Check out the [examples directory](./examples) for complete working examples:
+
+- NestJS with multiple config servers
+- Express.js integration
+- TypeScript standalone usage
+- Error handling patterns
 
 ## License
 
 ISC
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## Support
+
+If you encounter any issues or have questions, please:
+
+1. Check the [documentation](./README.md)
+2. Search [existing issues](https://github.com/sorodriguezz/config-client/issues)
+3. Create a [new issue](https://github.com/sorodriguezz/config-client/issues/new) with detailed information
+````
