@@ -10,9 +10,8 @@ import { ConfigClientService } from "./config-client.service";
 
 import type { IConfigServer } from "./interfaces/config-server.interface";
 
-export const CONFIG_CLIENT_VALUES: InjectionToken = Symbol(
-  "CONFIG_CLIENT_VALUES"
-);
+export const CONFIG_CLIENT_VALUES: InjectionToken<Record<string, any>> =
+  "CONFIG_CLIENT_VALUES";
 
 @Global()
 @Module({})
