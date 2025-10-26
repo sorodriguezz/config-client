@@ -42,11 +42,11 @@ export class ConfigClientService {
   private async processRepository(
     url: string,
     type: IConfigServer["type"],
+    httpClient: IHttpClient,
     repository:
       | INestConfigRepository
       | ISpringConfigRepository
-      | IGenericConfigRepository,
-    httpClient: IHttpClient
+      | IGenericConfigRepository
   ) {
     const useCase = this.useCaseRegistry[type];
     return await useCase(url, repository as any, httpClient);
@@ -56,6 +56,51 @@ export class ConfigClientService {
     const allConfigs: Record<string, any> = {};
 
     for (const server of servers) {
+      if (server.type === "generic-config-server") {
+        const {
+          url,
+          type,
+          logging: enableLogging,
+          alias,
+          httpClient,
+          config,
+        } = server;
+
+        try {
+          const clientToUse = httpClient || DefaultHttpClient.create();
+          const response = await this.processRepository(
+            url,
+            type,
+            clientToUse,
+            config
+          );
+          const data = response.data;
+
+          Object.entries(data).forEach(([key, value]) => {
+            const finalKey = alias ? `${alias}.${key}` : key;
+            if (!process.env[finalKey]) {
+              process.env[finalKey] = String(value);
+            }
+            allConfigs[finalKey] = value;
+          });
+
+          if (enableLogging) {
+            logging(this.logger, {
+              url,
+              auth: config.auth,
+              httpClient: clientToUse.getName(),
+            });
+          }
+          this.logger.log(`Configuration loaded from ${url}`);
+        } catch (err: any) {
+          this.logger.error(
+            `Error loading configuratioFn from ${url}:`,
+            err.message
+          );
+        }
+        continue;
+      }
+
       const {
         url,
         type,
@@ -74,8 +119,8 @@ export class ConfigClientService {
           const response = await this.processRepository(
             url,
             type,
-            repository,
-            clientToUse
+            clientToUse,
+            repository
           );
           const data = response.data;
 
@@ -99,9 +144,7 @@ export class ConfigClientService {
             });
           }
 
-          this.logger.log(
-            `Configuration loaded ${application ?? ""} from ${url}`
-          );
+          this.logger.log(`Configuration loaded ${application} from ${url}`);
         } catch (err: any) {
           this.logger.error(
             `Error loading configuration from ${url} - ${application}:`,

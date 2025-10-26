@@ -33,7 +33,7 @@ export interface ISpringConfigServer extends IBaseConfigServer {
 
 export interface IGenericConfigServer extends IBaseConfigServer {
   type: "generic-config-server";
-  repositories: IGenericConfigRepository[];
+  config: IConfigRepository;
 }
 
 export type IConfigServer =
