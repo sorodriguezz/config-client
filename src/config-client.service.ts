@@ -72,7 +72,7 @@ export class ConfigClientService {
             url,
             type,
             clientToUse,
-            config!
+            config || {}
           );
           const data = response.data;
 
@@ -94,7 +94,7 @@ export class ConfigClientService {
           this.logger.log(`Configuration loaded from ${url}`);
         } catch (err: any) {
           this.logger.error(
-            `Error loading configuratioFn from ${url}:`,
+            `Error loading configuration from ${url}:`,
             err.message
           );
         }
