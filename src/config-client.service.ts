@@ -72,7 +72,7 @@ export class ConfigClientService {
             url,
             type,
             clientToUse,
-            config
+            config!
           );
           const data = response.data;
 
@@ -87,7 +87,7 @@ export class ConfigClientService {
           if (enableLogging) {
             logging(this.logger, {
               url,
-              auth: config.auth,
+              auth: config?.auth,
               httpClient: clientToUse.getName(),
             });
           }
