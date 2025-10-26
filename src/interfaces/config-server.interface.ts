@@ -10,9 +10,16 @@ interface IBaseConfigServer {
 
 interface INestConfigRepository extends IConfigRepository {
   repo: string;
+  application: string;
+  profile: string;
 }
 
-interface ISpringConfigRepository extends IConfigRepository {}
+interface ISpringConfigRepository extends IConfigRepository {
+  application: string;
+  profile: string;
+}
+
+interface IGenericConfigRepository extends IConfigRepository {}
 
 export interface INestConfigServer extends IBaseConfigServer {
   type: "nest-config-server";
@@ -24,6 +31,18 @@ export interface ISpringConfigServer extends IBaseConfigServer {
   repositories: ISpringConfigRepository[];
 }
 
-export type IConfigServer = INestConfigServer | ISpringConfigServer;
+export interface IGenericConfigServer extends IBaseConfigServer {
+  type: "generic-config-server";
+  repositories: IGenericConfigRepository[];
+}
 
-export type { INestConfigRepository, ISpringConfigRepository };
+export type IConfigServer =
+  | INestConfigServer
+  | ISpringConfigServer
+  | IGenericConfigServer;
+
+export type {
+  INestConfigRepository,
+  ISpringConfigRepository,
+  IGenericConfigRepository,
+};

@@ -7,11 +7,13 @@ import { DefaultHttpClient } from "./adapters";
 
 import type {
   IConfigServer,
+  IGenericConfigRepository,
   INestConfigRepository,
   ISpringConfigRepository,
 } from "./interfaces/config-server.interface";
 import type { IConfigServerRegistry } from "./interfaces/use-case-registry.interface";
 import type { IHttpClient } from "./interfaces/http-client.interface";
+import { genericConfigServerUseCase } from "./use-case/generic-config-server.use-case";
 
 @Injectable()
 export class ConfigClientService {
@@ -20,6 +22,7 @@ export class ConfigClientService {
   private readonly useCaseRegistry: IConfigServerRegistry = {
     "nest-config-server": nestConfigServerUseCase,
     "spring-config-server": springConfigServerUseCase,
+    "generic-config-server": genericConfigServerUseCase,
   };
 
   get(key: string, configs: Record<string, any>): string {
@@ -39,7 +42,10 @@ export class ConfigClientService {
   private async processRepository(
     url: string,
     type: IConfigServer["type"],
-    repository: INestConfigRepository | ISpringConfigRepository,
+    repository:
+      | INestConfigRepository
+      | ISpringConfigRepository
+      | IGenericConfigRepository,
     httpClient: IHttpClient
   ) {
     const useCase = this.useCaseRegistry[type];
@@ -88,12 +94,14 @@ export class ConfigClientService {
               repo,
               application,
               profile,
-              auth: repository.auth,
+              auth: repository["auth" as keyof typeof repository],
               httpClient: clientToUse.getName(),
             });
           }
 
-          this.logger.log(`Configuration loaded ${application} from ${url}`);
+          this.logger.log(
+            `Configuration loaded ${application ?? ""} from ${url}`
+          );
         } catch (err: any) {
           this.logger.error(
             `Error loading configuration from ${url} - ${application}:`,

@@ -13,4 +13,7 @@ export interface IConfigServerRegistry {
   "spring-config-server": IConfigServerUseCase<
     import("./config-server.interface").ISpringConfigRepository
   >;
+  "generic-config-server": IConfigServerUseCase<
+    import("./config-server.interface").IGenericConfigRepository
+  >;
 }
