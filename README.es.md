@@ -335,7 +335,7 @@ SECONDARY_PASSWORD=secret2
 
 ## Tipos de Config Server
 
-Esta biblioteca soporta dos tipos de servidores de configuración:
+Esta biblioteca soporta tres tipos de servidores de configuración:
 
 ### 1. **nest-config-server**
 
@@ -346,6 +346,12 @@ Diseñado para servidores de configuración personalizados de NestJS.
 
 Usa parámetros de ruta en la URL (ej. `/application/profile`).
 Compatible con Spring Cloud Config Server (todas las versiones con manejo automático de fallback).
+
+### 3. **generic-config-server**
+
+Usa la URL tal como está sin modificaciones adicionales de parámetros o rutas.
+Diseñado para cualquier endpoint HTTP genérico que retorne datos de configuración en formato JSON.
+Perfecto para APIs REST, endpoints personalizados, o cualquier servicio HTTP que proporcione configuración.
 
 ## Uso
 
@@ -392,6 +398,18 @@ import { ConfigClientModule } from "@sorodriguez/config-client";
             },
           },
         ],
+      },
+      {
+        url: "https://api.example.com/config", // URL directa al endpoint de configuración
+        type: "generic-config-server",
+        logging: true,
+        alias: "api", // Opcional: prefijo para las claves de configuración
+        config: {
+          auth: {
+            username: "api-user",
+            password: "api-password",
+          },
+        },
       },
     ]),
   ],
@@ -638,6 +656,66 @@ Cada servidor puede cargar desde múltiples repositorios:
     },
   ],
 }
+```
+
+### Ejemplos de Servidor de Configuración Genérica
+
+El tipo `generic-config-server` te permite obtener configuración desde cualquier endpoint HTTP que retorne datos JSON:
+
+#### Uso Básico
+
+```typescript
+{
+  url: "https://api.miempresa.com/config",
+  type: "generic-config-server",
+  logging: true,
+}
+```
+
+#### Con Autenticación
+
+```typescript
+{
+  url: "https://api-segura.miempresa.com/config",
+  type: "generic-config-server",
+  logging: true,
+  alias: "segura",
+  config: {
+    auth: {
+      username: "usuario-config",
+      password: "password-config"
+    }
+  }
+}
+```
+
+#### Múltiples Endpoints Genéricos
+
+```typescript
+ConfigClientModule.forRoot([
+  {
+    url: "https://api.basedatos.com/config",
+    type: "generic-config-server",
+    alias: "bd",
+    config: {
+      auth: {
+        username: "usuario-bd",
+        password: "pass-bd",
+      },
+    },
+  },
+  {
+    url: "https://api.cache.com/configuracion",
+    type: "generic-config-server",
+    alias: "cache",
+  },
+  {
+    url: "https://api-interna.empresa.com/config-app",
+    type: "generic-config-server",
+    alias: "interna",
+    config: {},
+  },
+]);
 ```
 
 ## Compatibilidad con Spring Cloud Config

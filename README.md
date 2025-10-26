@@ -333,7 +333,7 @@ SECONDARY_PASSWORD=secret2
 
 ## Config Server Types
 
-This library supports two types of config servers:
+This library supports three types of config servers:
 
 ### 1. **nest-config-server**
 
@@ -344,6 +344,12 @@ Designed for custom NestJS config servers.
 
 Uses path parameters in the URL (e.g., `/application/profile`).
 Compatible with Spring Cloud Config Server (all versions with automatic fallback handling).
+
+### 3. **generic-config-server**
+
+Uses the URL as-is without any additional parameters or path modifications.
+Designed for any generic HTTP endpoint that returns configuration data in JSON format.
+Perfect for REST APIs, custom endpoints, or any HTTP service that provides configuration.
 
 ## Usage
 
@@ -390,6 +396,18 @@ import { ConfigClientModule } from "@sorodriguez/config-client";
             },
           },
         ],
+      },
+      {
+        url: "https://api.example.com/config", // Direct URL to config endpoint
+        type: "generic-config-server",
+        logging: true,
+        alias: "api", // Optional: prefix for config keys
+        config: {
+          auth: {
+            username: "api-user",
+            password: "api-password",
+          },
+        },
       },
     ]),
   ],
@@ -636,6 +654,66 @@ Each server can load from multiple repositories:
     },
   ],
 }
+```
+
+### Generic Config Server Examples
+
+The `generic-config-server` type allows you to fetch configuration from any HTTP endpoint that returns JSON data:
+
+#### Basic Usage
+
+```typescript
+{
+  url: "https://api.mycompany.com/config",
+  type: "generic-config-server",
+  logging: true,
+}
+```
+
+#### With Authentication
+
+```typescript
+{
+  url: "https://secure-api.mycompany.com/config",
+  type: "generic-config-server",
+  logging: true,
+  alias: "secure",
+  config: {
+    auth: {
+      username: "config-user",
+      password: "config-password"
+    }
+  }
+}
+```
+
+#### Multiple Generic Endpoints
+
+```typescript
+ConfigClientModule.forRoot([
+  {
+    url: "https://api.database.com/config",
+    type: "generic-config-server",
+    alias: "db",
+    config: {
+      auth: {
+        username: "db-user",
+        password: "db-pass",
+      },
+    },
+  },
+  {
+    url: "https://api.cache.com/settings",
+    type: "generic-config-server",
+    alias: "cache",
+  },
+  {
+    url: "https://internal-api.company.com/app-config",
+    type: "generic-config-server",
+    alias: "internal",
+    config: {},
+  },
+]);
 ```
 
 ## Spring Cloud Config Compatibility

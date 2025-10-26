@@ -51,6 +51,6 @@ export class AxiosHttpAdapter implements IHttpClient {
   }
 
   getName(): string {
-    return "axios";
+    return "Axios";
   }
 }

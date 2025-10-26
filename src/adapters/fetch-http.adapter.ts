@@ -104,6 +104,6 @@ export class FetchHttpAdapter implements IHttpClient {
   }
 
   getName(): string {
-    return "fetch";
+    return "Fetch";
   }
 }
