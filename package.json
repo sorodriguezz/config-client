@@ -1,5 +1,5 @@
 {
-  "name": "@sorodriguez/config-client",
+  "name": "@sorodriguez/nest-cloud-client",
   "version": "2.2.4",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -18,9 +18,9 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/sorodriguezz/config-client.git"
+    "url": "git+https://github.com/sorodriguezz/nest-cloud-client.git"
   },
-  "homepage": "https://github.com/sorodriguezz/config-client#readme",
+  "homepage": "https://github.com/sorodriguezz/nest-cloud-client#readme",
   "dependencies": {
     "axios": "^1.9.0"
   },

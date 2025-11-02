@@ -1,4 +1,4 @@
-# Config Client
+# Nest Cloud Client
 
 [English](#config-client) | [Español](./README.es.md)
 
@@ -18,7 +18,7 @@ A powerful and flexible client for loading configuration from multiple Config Se
 ## Installation
 
 ```bash
-npm i @sorodriguez/config-client
+npm i @sorodriguez/nest-cloud-client
 ```
 
 ## Built With
@@ -36,7 +36,7 @@ You can customize the HTTP client used for requests. By default, the library use
 ### Using Axios (Default)
 
 ```typescript
-import { ConfigClientModule } from "@sorodriguez/config-client";
+import { ConfigClientModule } from "@sorodriguez/nest-cloud-client";
 
 @Module({
   imports: [
@@ -56,7 +56,7 @@ export class AppModule {}
 ### Using Fetch
 
 ```typescript
-import { ConfigClientModule, FetchHttpAdapter } from "@sorodriguez/config-client";
+import { ConfigClientModule, FetchHttpAdapter } from "@sorodriguez/nest-cloud-client";
 
 @Module({
   imports: [
@@ -76,8 +76,8 @@ export class AppModule {}
 ### Using Custom HTTP Client
 
 ```typescript
-import { ConfigClientModule } from "@sorodriguez/config-client";
-import { IHttpClient, IHttpRequestOptions, IHttpResponse } from "@sorodriguez/config-client";
+import { ConfigClientModule } from "@sorodriguez/nest-cloud-client";
+import { IHttpClient, IHttpRequestOptions, IHttpResponse } from "@sorodriguez/nest-cloud-client";
 
 class CustomHttpClient implements IHttpClient {
   async get<T>(url: string, options?: IHttpRequestOptions): Promise<IHttpResponse<T>> {
@@ -134,7 +134,7 @@ import {
   ConfigClientModule,
   createSpringConfigServer, // 👈 Helper function
   createNestConfigServer, // 👈 Helper function
-} from "@sorodriguez/config-client";
+} from "@sorodriguez/nest-cloud-client";
 
 @Module({
   imports: [
@@ -191,7 +191,7 @@ export class AppModule {}
 ```typescript
 import { Module } from "@nestjs/common";
 import { ConfigModule, ConfigService } from "@nestjs/config";
-import { ConfigClientModule } from "@sorodriguez/config-client";
+import { ConfigClientModule } from "@sorodriguez/nest-cloud-client";
 
 @Module({
   imports: [
@@ -237,7 +237,7 @@ import {
   ConfigClientModule,
   AxiosHttpAdapter,
   FetchHttpAdapter,
-} from "@sorodriguez/config-client";
+} from "@sorodriguez/nest-cloud-client";
 
 @Module({
   imports: [
@@ -359,7 +359,7 @@ Import the `ConfigClientModule` into your application's root module:
 
 ```typescript
 import { Module } from "@nestjs/common";
-import { ConfigClientModule } from "@sorodriguez/config-client";
+import { ConfigClientModule } from "@sorodriguez/nest-cloud-client";
 
 @Module({
   imports: [
@@ -422,7 +422,7 @@ import { Injectable, Inject } from "@nestjs/common";
 import {
   CONFIG_CLIENT_VALUES,
   ConfigClientService,
-} from "@sorodriguez/config-client";
+} from "@sorodriguez/nest-cloud-client";
 
 @Injectable()
 export class AppService {
@@ -461,7 +461,7 @@ const express = require("express");
 const {
   ConfigClientModule,
   ConfigClientService,
-} = require("@sorodriguez/config-client");
+} = require("@sorodriguez/nest-cloud-client");
 
 const app = express();
 
@@ -526,7 +526,7 @@ bootstrap();
 import {
   ConfigClientModule,
   ConfigClientService,
-} from "@sorodriguez/config-client";
+} from "@sorodriguez/nest-cloud-client";
 
 async function loadConfig() {
   const configModule = ConfigClientModule.forRoot([
