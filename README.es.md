@@ -1,4 +1,4 @@
-# Nest Cloud Client
+# Nest Cloud Config Client
 
 [English](./README.md) | [Español](#config-client)
 
@@ -18,7 +18,7 @@ Un cliente poderoso y flexible para cargar configuraciones desde múltiples Conf
 ## Instalación
 
 ```bash
-npm i @sorodriguez/nest-cloud-client
+npm i @sorodriguez/nest-cloud-config-client
 ```
 
 ## Construido Con
